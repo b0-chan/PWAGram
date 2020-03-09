@@ -1,8 +1,9 @@
-const STATIC_CACHE_NAME = 'static-v2';
+const STATIC_CACHE_NAME = 'static-v8';
 const DYNAMIC_CACHE_NAME = 'dynamic-v2';
 const requests = [
     '/',
     '/index.html',
+    '/offline.html',
     '/src/js/app.js',
     '/src/js/feed.js',
     '/src/js/material.min.js',
@@ -55,7 +56,11 @@ function handleFetchEvent(e) {
         .match(e.request)
         .then(response => response
             ? response
-            : fetch(e.request).then(saveResToCache));
+            : fetch(e.request)
+                .then(saveResToCache))
+                .catch(() => caches
+                    .open(STATIC_CACHE_NAME)
+                    .then(cache => cache.match('/offline.html')));
 
     e.respondWith(response);
 }
