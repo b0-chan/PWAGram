@@ -1,5 +1,5 @@
-const STATIC_CACHE_NAME = 'static-v8';
-const DYNAMIC_CACHE_NAME = 'dynamic-v2';
+const STATIC_CACHE_NAME = 'static-v4.2';
+const DYNAMIC_CACHE_NAME = 'dynamic-v3.1';
 const requests = [
     '/',
     '/index.html',
@@ -66,7 +66,7 @@ function handleFetchEvent(e) {
 }
 
 function transformKeyToPromise(key) {
-    return STATIC_CACHE_NAME !== key || DYNAMIC_CACHE_NAME !== key
+    return STATIC_CACHE_NAME !== key && DYNAMIC_CACHE_NAME !== key
         ? console.log('[SW removing old cache]', key) || caches.delete(key)
         : new Promise(resolve => resolve(null))
 }
