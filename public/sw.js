@@ -1,5 +1,5 @@
 const STATIC_CACHE_NAME = 'static-v4.2';
-const DYNAMIC_CACHE_NAME = 'dynamic-v3.1';
+const DYNAMIC_CACHE_NAME = 'dynamic-v3.4';
 const requests = [
     '/',
     '/index.html',
@@ -41,32 +41,73 @@ function handleActiveEvent(e) {
             .then(keys => Promise.all(keys.map(transformKeyToPromise)))
     );
 
+    return self.clients.claim();
 }
 
-function handleFetchEvent(e) {
-    console.log('[SW] fetch event handle', e);
+//TODO:Strategy cache first
 
-    function saveResToCache(res) {
-        return caches
-            .open(DYNAMIC_CACHE_NAME)
-            .then(cache => void cache.put(e.request.url, res.clone()) || res)
-    }
+// function handleFetchEvent(e) {
+//     console.log('[SW] fetch event handle', e);
+//
+//     function saveResToCache(res) {
+//         return caches
+//             .open(DYNAMIC_CACHE_NAME)
+//             .then(cache => void cache.put(e.request.url, res.clone()) || res)
+//     }
+//
+//     const response = caches
+//         .match(e.request)
+//         .then(response => response
+//             ? response
+//             : fetch(e.request)
+//                 .then(saveResToCache))
+//                 .catch(() => caches
+//                     .open(STATIC_CACHE_NAME)
+//                     .then(cache => cache.match('/offline.html')));
+//
+//     e.respondWith(response);
+// }
 
-    const response = caches
+
+//TODO: Strategy network first
+function handleFetchEvent(event) {
+    console.log('[SW] fetch event handle', event);
+
+    const response = fetch(event.request)
+        .then((res) => saveResToCache(res, event))
+        .catch((err) => errorHandler(err, event));
+
+    event.respondWith(response);
+}
+
+
+function saveResToCache(res, e) {
+    return caches
+        .open(DYNAMIC_CACHE_NAME)
+        .then(cache => void cache.put(e.request.url, res.clone()) || res)
+}
+
+function errorHandler(err, e) {
+    console.error('[SW fetch handler request catching]', err);
+
+    return caches
         .match(e.request)
-        .then(response => response
-            ? response
-            : fetch(e.request)
-                .then(saveResToCache))
-                .catch(() => caches
-                    .open(STATIC_CACHE_NAME)
-                    .then(cache => cache.match('/offline.html')));
+        .then(response => {
+            if (response) return response;
 
-    e.respondWith(response);
+            return caches
+                .open(STATIC_CACHE_NAME)
+                .then(cache => cache.match('/offline.html'))
+                .catch(err => console.log('[SW] failed attempt to get an offline page from the cache'))
+        });
 }
 
 function transformKeyToPromise(key) {
-    return STATIC_CACHE_NAME !== key && DYNAMIC_CACHE_NAME !== key
-        ? console.log('[SW removing old cache]', key) || caches.delete(key)
-        : new Promise(resolve => resolve(null))
+    if (STATIC_CACHE_NAME !== key && DYNAMIC_CACHE_NAME !== key) {
+        console.log('[SW removing old cache]', key);
+
+        return caches.delete(key);
+    }
+
+    return new Promise(resolve => resolve(null));
 }
