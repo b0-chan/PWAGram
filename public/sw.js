@@ -1,5 +1,5 @@
-const STATIC_CACHE_NAME = 'static-v4.2';
-const DYNAMIC_CACHE_NAME = 'dynamic-v3.4';
+const STATIC_CACHE_NAME = 'static-v4.3';
+const DYNAMIC_CACHE_NAME = 'dynamic-v3.5';
 const requests = [
     '/',
     '/index.html',
