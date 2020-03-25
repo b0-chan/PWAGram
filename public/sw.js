@@ -1,3 +1,6 @@
+importScripts('/src/js/idb.js'); // TODO: removed unnecessary import
+importScripts('/src/js/db.js');
+
 const STATIC_CACHE_NAME = 'static-v4.3';
 const DYNAMIC_CACHE_NAME = 'dynamic-v3.5';
 const requests = [
@@ -6,6 +9,7 @@ const requests = [
     '/offline.html',
     '/src/js/app.js',
     '/src/js/feed.js',
+    '/src/js/idb.js',
     '/src/js/material.min.js',
     '/src/css/app.css',
     '/src/css/feed.css',
