@@ -29,3 +29,16 @@
   display: block;
   margin: 10px auto;
 }
+
+.card-title {
+  background-size: cover;
+  height: 180px
+}
+
+.card-title-text {
+  color: white;
+}
+
+.card-supporting-text {
+  text-align: center;
+}

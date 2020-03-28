@@ -1,5 +1,8 @@
-importScripts('/src/js/idb.js'); // TODO: removed unnecessary import
+importScripts('/src/js/idb.js');
 importScripts('/src/js/db.js');
+
+
+//TODO: Rewrite all promise code to async/await
 
 const STATIC_CACHE_NAME = 'static-v4.3';
 const DYNAMIC_CACHE_NAME = 'dynamic-v3.5';
@@ -74,14 +77,32 @@ function handleActiveEvent(e) {
 
 
 //TODO: Strategy network first
-function handleFetchEvent(event) {
+async function handleFetchEvent(event) {
     console.log('[SW] fetch event handle', event);
+    const url = 'https://pwagram-f2fd8.firebaseio.com/posts.json';
 
-    const response = fetch(event.request)
-        .then((res) => saveResToCache(res, event))
-        .catch((err) => errorHandler(err, event));
+    if (event.request.url.includes(url)) {
+        const response = await fetch(event.request);
+        const clonedRes = response.clone();
+        const data = await clonedRes.json();
 
-    event.respondWith(response);
+        for (const post of Object.values(data)) {
+            const db = await dbPromise;
+            const tx = db.transaction('posts', 'readwrite');
+            const store = tx.objectStore('posts');
+            store.put(post);
+        }
+
+        event.respondWith(response);
+    } else {
+
+        try {
+            const response = await fetch(event.request);
+            event.respondWith(saveResToCache(response, event));
+        } catch (e) {
+            event.respondWith(errorHandler(e, event));
+        }
+    }
 }
 
 
@@ -102,7 +123,7 @@ function errorHandler(err, e) {
             return caches
                 .open(STATIC_CACHE_NAME)
                 .then(cache => cache.match('/offline.html'))
-                .catch(err => console.log('[SW] failed attempt to get an offline page from the cache'))
+                .catch(err => console.log('[SW] failed attempt to get an offline page from the cache' + err))
         });
 }
 
