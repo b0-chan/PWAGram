@@ -1,6 +1,7 @@
 import {prompt} from './app.js';
 
 //TODO: Added logic for creating post
+const URL = 'https://pwagram-f2fd8.firebaseio.com/posts.json';
 
 const shareImageButton = document.querySelector('#share-image-button');
 const createPostArea = document.querySelector('#create-post');
@@ -8,8 +9,9 @@ const closeCreatePostModalButton = document.querySelector('#close-create-post-mo
 const sharedMomentsArea = document.querySelector('#shared-moments');
 
 shareImageButton.addEventListener('click', openCreatePostModal);
-
 closeCreatePostModalButton.addEventListener('click', closeCreatePostModal);
+
+(async () => await loadPosts())();
 
 
 function openCreatePostModal() {
@@ -21,7 +23,7 @@ function closeCreatePostModal() {
     createPostArea.style.display = 'none';
 }
 
-function createCard(data) {
+function renderCard(data) {
     const cardWrapper = document.createElement('div');
     cardWrapper.className = 'shared-moment-card mdl-card mdl-shadow--2dp';
     const cardTitle = document.createElement('div');
@@ -49,21 +51,35 @@ function clearCards() {
 function updateUI(data) {
     clearCards();
 
-    data.forEach(createCard);
+    Object
+        .values(data)
+        .forEach(renderCard)
 }
 
+async function loadPosts() {
+    try {
+        const res = await fetch(URL);
+        const data = await res.json();
 
-const url = 'https://pwagram-f2fd8.firebaseio.com/posts.json';
-fetch(url)
-    .then(res => res.json())
-    .then(data => {
+        updateUI(data);
         console.log('data from web', data);
-        const posts = Object.values(data);
+    } catch (e) {
+        console.error('failed loading data from web');
+        const data = await tryGetResFromCache();
 
-        updateUI(posts);
-    });
+        updateUI(data)
+    }
+}
 
+async function tryGetResFromCache() {
+    if ('caches' in window) {
+        const response = await caches.match(URL);
 
+        if (response) {
+            return response.json();
+        }
+    }
+}
 
 function handlePrompt() {
     if (prompt.isTriggered) {
