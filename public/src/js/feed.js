@@ -1,4 +1,5 @@
 import {prompt} from './app.js';
+import {getAllDataFromDB} from './db.js';
 
 //TODO: Added logic for creating post
 const URL = 'https://pwagram-f2fd8.firebaseio.com/posts.json';
@@ -51,9 +52,7 @@ function clearCards() {
 function updateUI(data) {
     clearCards();
 
-    Object
-        .values(data)
-        .forEach(renderCard)
+    data.forEach(renderCard);
 }
 
 async function loadPosts() {
@@ -61,13 +60,18 @@ async function loadPosts() {
         const res = await fetch(URL);
         const data = await res.json();
 
-        updateUI(data);
+        updateUI(Object.values(data));
         console.log('data from web', data);
     } catch (e) {
         console.error('failed loading data from web');
-        const data = await tryGetResFromCache();
+        // Using cache
+        // const data = await tryGetResFromCache();
+        // updateUI(Object.values(data))
 
-        updateUI(data)
+        // Using indexedDB
+        const data = await tryGetDataFromDB();
+
+        updateUI(data);
     }
 }
 
@@ -79,6 +83,14 @@ async function tryGetResFromCache() {
             return response.json();
         }
     }
+}
+
+async function tryGetDataFromDB() {
+    if ('indexedDB' in window) {
+
+        return getAllDataFromDB('posts');
+    }
+
 }
 
 function handlePrompt() {

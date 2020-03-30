@@ -42,65 +42,42 @@ async function handleActiveEvent(e) {
     return self.clients.claim();
 }
 
-//TODO:Strategy cache first
-
-// function handleFetchEvent(e) {
-//     console.log('[SW] fetch event handle', e);
-//
-//     function saveResToCache(res) {
-//         return caches
-//             .open(DYNAMIC_CACHE_NAME)
-//             .then(cache => void cache.put(e.request.url, res.clone()) || res)
-//     }
-//
-//     const response = caches
-//         .match(e.request)
-//         .then(response => response
-//             ? response
-//             : fetch(e.request)
-//                 .then(saveResToCache))
-//                 .catch(() => caches
-//                     .open(STATIC_CACHE_NAME)
-//                     .then(cache => cache.match('/offline.html')));
-//
-//     e.respondWith(response);
-// }
-
 
 //TODO: Strategy network first
 async function handleFetchEvent(event) {
     console.log('[SW] fetch event handle', event);
     const url = 'https://pwagram-f2fd8.firebaseio.com/posts.json';
-
-    if (event.request.url.includes(url)) {
-        const response = await fetch(event.request);
-        const clonedRes = response.clone();
-        const data = await clonedRes.json();
-
-        for (const post of Object.values(data)) {
-            const db = await dbPromise;
-            const tx = db.transaction('posts', 'readwrite');
-            const store = tx.objectStore('posts');
-
-            store.put(post);
-        }
-
-        event.respondWith(response);
-    } else {
-
-        try {
+    const promise = new Promise(async resolve => {
+        if (event.request.url.includes(url)) {
             const response = await fetch(event.request);
-            event.respondWith(saveResToCache(response, event));
-        } catch (e) {
-            event.respondWith(errorHandler(e, event));
+            const clonedRes = response.clone();
+            const data = await clonedRes.json();
+
+            for (const post of Object.values(data)) {
+                await writeDataToDB('posts', post);
+            }
+
+            resolve(response);
+        } else {
+            let res;
+            try {
+                const response = await fetch(event.request);
+                res = saveResToCache(response, event);
+            } catch (err) {
+                res = errorHandler(err, event);
+            } finally {
+                resolve(res);
+            }
         }
-    }
+    });
+
+    event.respondWith(promise);
 }
 
 
 async function saveResToCache(res, e) {
     const cache = await caches.open(DYNAMIC_CACHE_NAME);
-    cache.put(e.request.url, res.clone());
+    await cache.put(e.request.url, res.clone());
 
     return res;
 }
