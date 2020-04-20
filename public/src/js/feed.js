@@ -1,7 +1,6 @@
 import {prompt} from './app.js';
 import {getAllDataFromDB} from './db.js';
 
-//TODO: Added logic for creating post
 const URL = 'https://pwagram-f2fd8.firebaseio.com/posts.json';
 
 const shareImageButton = document.querySelector('#share-image-button');
@@ -86,6 +85,7 @@ async function tryGetResFromCache() {
 }
 
 async function tryGetDataFromDB() {
+
     if ('indexedDB' in window) {
 
         return getAllDataFromDB('posts');

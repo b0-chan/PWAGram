@@ -1,5 +1,5 @@
 importScripts('/src/js/idb.js');
-importScripts('/src/js/db.js');
+importScripts('/src/js/db-sw.js');
 
 const STATIC_CACHE_NAME = 'static-v4.3';
 const DYNAMIC_CACHE_NAME = 'dynamic-v3.5';
@@ -52,7 +52,7 @@ async function handleFetchEvent(event) {
             const response = await fetch(event.request);
             const clonedRes = response.clone();
             const data = await clonedRes.json();
-
+            await clearAllData('posts');
             for (const post of Object.values(data)) {
                 await writeDataToDB('posts', post);
             }
